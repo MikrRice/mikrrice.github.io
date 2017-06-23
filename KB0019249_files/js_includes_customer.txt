@@ -1,0 +1,626 @@
+/*! RESOURCE: /scripts/js_includes_customer.js */
+/*! RESOURCE: Validate Client Script Functions */
+function validateFunctionDeclaration(fieldName, functionName) {
+var code = g_form.getValue(fieldName);
+if (code == "")
+return true;
+code = removeCommentsFromClientScript(code);
+var patternString = "function(\\s+)" + functionName + "((\\s+)|\\(|\\[\r\n])";
+var validatePattern = new RegExp(patternString);
+if (!validatePattern.test(code)) {
+var msg = new GwtMessage().getMessage('Missing function declaration for') + ' ' + functionName;
+g_form.showErrorBox(fieldName, msg);
+return false;
+}
+return true;
+}
+function validateNoServerObjectsInClientScript(fieldName) {
+var code = g_form.getValue(fieldName);
+if (code == "")
+return true;
+code = removeCommentsFromClientScript(code);
+var doubleQuotePattern = /"[^"\r\n]*"/g;
+code = code.replace(doubleQuotePattern,"");
+var singleQuotePattern = /'[^'\r\n]*'/g;
+code = code.replace(singleQuotePattern,"");
+var rc = true;
+var gsPattern = /(\s|\W)gs\./;
+if (gsPattern.test(code)) {
+var msg = new GwtMessage().getMessage('The object "gs" should not be used in client scripts.');
+g_form.showErrorBox(fieldName, msg);
+rc = false;
+}
+var currentPattern = /(\s|\W)current\./;
+if (currentPattern.test(code)) {
+var msg = new GwtMessage().getMessage('The object "current" should not be used in client scripts.');
+g_form.showErrorBox(fieldName, msg);
+rc = false;
+}
+return rc;
+}
+function validateUIScriptIIFEPattern(fieldName, scopeName, scriptName) {
+var code = g_form.getValue(fieldName);
+var rc = true;
+if("global" == scopeName)
+return rc;
+code = removeCommentsFromClientScript(code);
+code = removeSpacesFromClientScript(code);
+code = removeNewlinesFromClientScript(code);
+var requiredStart =  "var"+scopeName+"="+scopeName+"||{};"+scopeName+"."+scriptName+"=(function(){\"usestrict\";";
+var requiredEnd = "})();";
+if(!code.startsWith(requiredStart)) {
+var msg = new GwtMessage().getMessage("Missing closure assignment.");
+g_form.showErrorBox(fieldName,msg);
+rc = false;
+}
+if(!code.endsWith(requiredEnd)) {
+var msg = new GwtMessage().getMessage("Missing immediately-invoked function declaration end.");
+g_form.showErrorBox(fieldName,msg);
+rc = false;
+}
+return rc;
+}
+function validateNotCallingFunction (fieldName, functionName) {
+var code = g_form.getValue(fieldName);
+var rc = true;
+var reg = new RegExp(functionName, "g");
+var matches;
+code = removeCommentsFromClientScript(code);
+if (code == '')
+return rc;
+matches = code.match(reg);
+rc = (matches && (matches.length == 1));
+if(!rc) {
+var msg = "Do not explicitly call the " + functionName + " function in your business rule. It will be called automatically at execution time.";
+msg = new GwtMessage().getMessage(msg);
+g_form.showErrorBox(fieldName,msg);
+}
+return rc;
+}
+function removeCommentsFromClientScript(code) {
+var pattern1 = /\/\*(.|[\r\n])*?\*\//g;
+code = code.replace(pattern1,"");
+var pattern2 = /\/\/.*/g;
+code = code.replace(pattern2,"");
+return code;
+}
+function removeSpacesFromClientScript(code) {
+var pattern = /\s*/g;
+return code.replace(pattern,"");
+}
+function removeNewlinesFromClientScript(code) {
+var pattern = /[\r\n]*/g;
+return code.replace(pattern,"");
+}
+/*! RESOURCE: NotifyOnTaskClient */
+function NotifyOnTaskClient(source_table, sys_id) {
+this.sourceTable = source_table;
+this.sysId = sys_id;
+this.number = null;
+this.submitCallback = null;
+this.successCallback = null;
+this.errorCallback = null;
+this.cancelCallback = null;
+this.notifyType = "sms";
+this.showLoading = false;
+this.addToWorkNotes = true;
+this.setNumber = function(val) {
+this.number = val;
+};
+this.setAddToWorkNotes = function(val) {
+this.addToWorkNotes = val;
+};
+this.setNotifyType = function(val) {
+this.notifyType = val;
+};
+this.setShowLoading = function(val) {
+this.showLoading = val;
+};
+this.setSourceTable = function(val) {
+this.sourceTable = val;
+};
+this.setSysId = function(val) {
+this.sysId = val;
+};
+this.setSubmitCallback = function(callback) {
+this.submitCallback = callback;
+};
+this.hasSubmitCallback = function() {
+return (this.submitCallback != null);
+};
+this.setSuccessCallback = function(callback) {
+this.successCallback = callback;
+};
+this.hasSuccessCallback = function() {
+return (this.successCallback != null);
+};
+this.setCancelCallback = function(callback) {
+this.cancelCallback = callback;
+};
+this.hasCancelCallback = function() {
+return (this.cancelCallback != null);
+};
+this.setErrorCallback = function(callback) {
+this.errorCallback = callback;
+};
+this.hasErrorCallback = function() {
+return (this.errorCallback != null);
+};
+this.open = function(title, notifyType) {
+if (notifyType)
+this.setNotifyType(notifyType);
+var dialogClass = window.GlideModal ? GlideModal : GlideDialogWindow;
+var dialog = new dialogClass("notify_on_task");
+dialog.setWidth("350");
+dialog.setTitle(title);
+dialog.setPreference("source_table", this.sourceTable);
+dialog.setPreference("sys_id", this.sysId);
+dialog.setPreference("type",this.notifyType);
+dialog.setPreference("add_to_work_notes", this.addToWorkNotes);
+dialog.setPreference("show_loading", this.showLoading);
+if (this.hasSubmitCallback)
+dialog.setPreference("submit_callback", this.submitCallback);
+if (this.hasCancelCallback)
+dialog.setPreference("cancel_callback", this.cancelCallback);
+if (this.hasSuccessCallback)
+dialog.setPreference("success_callback", this.successCallback);
+if (this.hasErrorCallback)
+dialog.setPreference("error_callback", this.errorCallback);
+dialog.render();
+};
+this.openForSms = function() {
+this.open(new GwtMessage().format("SMS alert for {0}", this.number), "sms");
+};
+this.openForConferenceCall = function() {
+this.open(new GwtMessage().format("Conference call for {0}", this.number), "conference");
+};
+}
+/*! RESOURCE: UI Action Context Menu */
+function showUIActionContext(event) {
+if (!g_user.hasRole("ui_action_admin"))
+return;
+var element = Event.element(event);
+if (element.tagName.toLowerCase() == "span")
+element = element.parentNode;
+var id = element.getAttribute("gsft_id");
+var mcm = new GwtContextMenu('context_menu_action_' + id);
+mcm.clear();
+mcm.addURL(getMessage('Edit UI Action'), "sys_ui_action.do?sys_id=" + id, "gsft_main");
+contextShow(event, mcm.getID(), 500, 0, 0);
+Event.stop(event);
+}
+addLoadEvent(function() {
+document.on('contextmenu', '.action_context', function (evt, element) {
+showUIActionContext(evt);
+});
+});
+/*! RESOURCE: KnowledgeSearchService */
+var KnowledgeSearchService = Class.create();
+KnowledgeSearchService.prototype = {
+HTTP_OK: "200",
+HTTP_PARTIAL_CONTENT: "206",
+INTERLEAVED: "knowledge",
+EVENT_SEARCH_SERVICE_ACTIVATED: "cxs:search_service_activated",
+EVENT_TARGET_UPDATED: "cxs:target_update",
+CXS_SEARCH_RESULTS_HEADER: "knowledge_cxs_results_header",
+CXS_RESULTS_VCR: "cxs_results_vcr",
+CXS_SHOW_MORE_VCR: "cxs_show_more",
+initialize: function(searchConfig, session, targetElement, availableSearchFields, waitPeriod, resultThreshold, isAdmin, appendPagedResults) {
+this.timeout = null;
+this.searchConfig = searchConfig;
+this.availableSearchFields = availableSearchFields;
+this.waitPeriod = waitPeriod;
+this.resultThreshold = resultThreshold;
+this.resultsHeaderText = searchConfig.resultsHeaderText;
+this.macroNames = {};
+this.sessionConfig = searchConfig.cxs_session_config;
+this.isAdmin = isAdmin;
+this.previousSearch = "";
+this.targetElement = targetElement;
+this.session = session;
+this.appendPagedResults = appendPagedResults;
+this.ajaxQueue = [];
+this.resultsMsg = "";
+this.hideOnEmptySearchTerm = true;
+this.onClearHTML = "";
+this.onSearchHTML = "";
+this.hardFilterParameters = {};
+this.softFilterParameters = {};
+this.limit = isNaN(searchConfig.limit) ? null : parseInt(searchConfig.limit);
+this.resultsPerPage = isNaN(searchConfig.results_per_page) ? null : parseInt(searchConfig.results_per_page);
+if (this.limit && this.resultsPerPage && (this.resultsPerPage > this.limit))
+this.resultsPerPage = this.limit;
+this.afterDataHandler = null;
+},
+saveState: function(key){
+if (!this._state)
+this._state = {};
+if (!this._state[key])
+this._state[key] = {};
+this._state[key].currentSearchID = this.currentSearchID;
+this._state[key].previousSearch = this.previousSearch;
+this._state[key].currentRow = this.currentRow;
+this._state[key].lastRow = this.lastRow;
+this._state[key].response = this.response;
+this._state[key].searchSource = this.searchSource;
+this._state[key].limitReached = this.limitReached;
+this._state[key].hasMoreResults = this.hasMoreResults;
+this._state[key].backAllowed = this.backAllowed;
+},
+restoreState: function(key){
+if (!this._state)
+this._state = {};
+if (!this._state[key]){
+this._state[key] = {
+backAllowed : false,
+hasMoreResults : false,
+currentRow : 0,
+lastRow : this.currentRow + this.resultsPerPage
+};
+}
+this.currentSearchID = this._state[key].currentSearchID;
+this.previousSearch = this._state[key].previousSearch;
+this.currentRow = this._state[key].currentRow;
+this.lastRow = this._state[key].lastRow;
+this.response = this._state[key].response;
+this.searchSource = this._state[key].searchSource;
+this.limitReached = this._state[key].limitReached;
+this.hasMoreResults = this._state[key].hasMoreResults;
+this.backAllowed = this._state[key].backAllowed;
+},
+search: function(searchElement, forceSearch) {
+if (!searchElement && !this._lastSearchElement)
+return;
+if (!searchElement)
+searchElement = this._lastSearchElement;
+this.currentSearchID = searchElement.id;
+var currentSearch = searchElement.value.trim();
+if (!currentSearch) {
+this._clear();
+return;
+}
+if (currentSearch == this.previousSearch)
+return;
+this._lastSearchElement = searchElement;
+this.previousSearch = currentSearch;
+this._stop();
+this.backAllowed = false;
+this.hasMoreResults = false;
+this.currentRow = 0;
+this.lastRow = this.currentRow + this.resultsPerPage;
+if (forceSearch)
+this._start(currentSearch);
+else
+this._start(currentSearch, this.waitPeriod);
+},
+_start: function(newSearch, waitPeriod) {
+if (!newSearch)
+return;
+var _startSearch = function() {
+this.buildSearchFilters();
+var resultDataElem = this.targetElement.select("#cxs_results_data")[0];
+if (resultDataElem)
+resultDataElem.addClassName("cxs_results_data_reloading");
+var glideAjax = new GlideAjax("KnowledgeContextSearchAjax");
+glideAjax.addParam("sysparm_name", "process");
+glideAjax.addParam("hardFilterParameters", Object.toJSON(this.hardFilterParameters));
+glideAjax.addParam("softFilterParameters", Object.toJSON(this.softFilterParameters));
+glideAjax.addParam("payload", this._wrap(newSearch));
+glideAjax.addParam("cxs_macro_names", Object.toJSON(this.macroNames));
+glideAjax.preventCancelNotification();
+glideAjax.setErrorCallback(this._errorHandler.bind(this));
+glideAjax.getXML(this._dataHandler.bind(this));
+this.ajaxQueue.push(this.session.id);
+}.bind(this);
+if (!waitPeriod)
+_startSearch();
+else
+this.timeout = setTimeout(_startSearch, this.waitPeriod);
+if (!this.targetElement.down("#cxs_results_data"))
+this.targetElement.update(this.onSearchHTML);
+},
+buildSearchFilters: function() {
+this.hardFilterParameters["u_applies_to_product"] = g_form.getValue("product");
+this.softFilterParameters["u_applies_to_product_models"] = g_form.getReference("asset").model;
+},
+_stop: function() {
+var resultDataElem = this.targetElement.select("#cxs_results_data")[0];
+if (resultDataElem)
+resultDataElem.removeClassName("cxs_results_data_reloading");
+if (!this.timeout)
+return;
+this._clearTimeout();
+},
+_clear: function() {
+this.previousSearch = "";
+this._clearTimeout();
+this.targetElement.update(this.onClearHTML);
+if (this.hideOnEmptySearchTerm)
+this.targetElement.hide();
+this.targetElement.fire(this.EVENT_TARGET_UPDATED);
+_frameChanged();
+},
+_clearTimeout: function() {
+if (!this.timeout)
+return;
+clearTimeout(this.timeout);
+this.timeout = null;
+},
+_dataHandler: function(response) {
+this.ajaxQueue.pop();
+if (!response || !response.responseXML) {
+if (this.isAdmin && g_form) {
+g_form.clearMessages();
+g_form.addErrorMessage(getMessage("Search Service Error: Empty ajax response returned"));
+}
+this.response = null;
+this._stop();
+this._clear();
+return;
+}
+var payload = response.responseXML.getElementsByTagName("payload");
+if (!payload || payload.length == 0 || !payload[0].getAttribute("response") || payload[0].getAttribute("response").length == 0) {
+if (this.isAdmin && g_form) {
+g_form.clearMessages();
+g_form.addErrorMessage(getMessage("Search Service Error: Empty payload returned"));
+}
+this.response = null;
+this._stop();
+this._clear();
+return;
+}
+var payloadObj = payload[0].getAttribute("response").evalJSON();
+if (payloadObj.status && payloadObj.status.code != this.HTTP_OK && payloadObj.status.code != this.HTTP_PARTIAL_CONTENT) {
+var errorMsg = payloadObj.status.err_msg;
+if (this.isAdmin && g_form) {
+g_form.clearMessages();
+g_form.addErrorMessage(new GwtMessage().getMessage("Search Service Error: {0}", errorMsg.join("<br/>")));
+}
+this.response = null;
+this._stop();
+return;
+}
+var previousResponse = this.response;
+var formattedResults = payload[0].getAttribute("html");
+this.response = payloadObj;
+this.searchSource = null;
+if (this.response.meta.sources && this.response.meta.sources[this.INTERLEAVED])
+this.searchSource = this.response.meta.sources[this.INTERLEAVED];
+if (this.searchSource && this.searchSource.window.start != 0 && this.appendPagedResults){
+this.targetElement.select("#cxs_results_data>tbody")[0].insert(formattedResults);
+this.response.results = previousResponse.results.concat(this.response.results);
+} else
+this.targetElement.update(this._getResultsMsgHtml() + formattedResults);
+if (this.hideOnEmptySearchTerm)
+this.targetElement.show();
+this._showHideHeader();
+this._updateVCR();
+this._updateHasMoreVCR();
+this.targetElement.fire(this.EVENT_TARGET_UPDATED);
+if (typeof this.afterDataHandler == "function") {
+try {
+this.afterDataHandler();
+} catch (e) {
+jslog("KnowledgeSearchService: afterDataHandler function error:\n" + e);
+}
+this.afterDataHandler = null;
+}
+_frameChanged();
+this._stop();
+},
+_errorHandler: function (request, callbackArgs) {
+this.ajaxQueue.pop();
+if (this.ajaxQueue.length == 0) {
+this._stop();
+g_form.clearMessages();
+g_form.addInfoMessage(getMessage("Your search timed out"));
+}
+},
+setAfterDataHandler: function(afterFunction) {
+this.afterDataHandler = afterFunction;
+},
+_wrap: function(searchTerms) {
+var payload = {
+context: this.searchConfig.cxs_context_config,
+meta: {
+results_header_text: this.resultsHeaderText,
+result_action_label: this.searchConfig.result_action_label,
+result_action_value: this.searchConfig.result_action_value,
+source_table: this.session.sourceTable,
+current_search_field: this.currentSearchID,
+session: this.session.id,
+is_doctype: this.session.is_doctype,
+is_new_record: this.session.is_new,
+includePinnedArticles: true
+},
+query: {
+freetext: searchTerms
+},
+debug: true
+};
+if (this.resultsPerPage)
+payload.meta.window = {
+"start": this.currentRow,
+"end": this.lastRow
+};
+if (this.search_as && this.search_as != "")
+payload.search_as = this.search_as;
+if (this.limit)
+payload.meta.limit = this.limit;
+if (this.session.sourceDoc)
+payload.meta.source_doc = this.session.sourceDoc;
+return Object.toJSON(payload);
+},
+_updateHasMoreVCR: function() {
+if (!this.searchSource || !this.searchSource.window || !this.targetElement)
+return;
+var buttons = this.targetElement.select("#" + this.CXS_SHOW_MORE_VCR);
+if (!buttons || buttons.length != 1)
+return;
+var button = buttons[0];
+this.hasMoreResults = this.searchSource.has_more_results &&
+(this.limit && this.lastRow < this.limit) &&
+(this.resultThreshold && this.lastRow < this.resultThreshold);
+if (this.searchSource.window.start == 0){
+if (this.hasMoreResults) {
+var showMoreContainer = this.targetElement.select("#cxs_show_more_container");
+if (showMoreContainer && showMoreContainer.length == 1)
+showMoreContainer[0].show();
+button.on("click", function(event) {
+event.stop();
+this.currentRow = this.currentRow + this.resultsPerPage;
+this.lastRow = this.currentRow + this.resultsPerPage;
+if (this.lastRow > this.limit)
+this.lastRow = this.limit;
+this._start(this.previousSearch);
+}.bind(this));
+}
+}
+if (!this.hasMoreResults)
+button.disabled = true;
+},
+_updateVCR: function() {
+if (!this.searchSource || !this.searchSource.window)
+return;
+if (this.response.request.limit)
+this.limit = this.response.request.limit;
+this.currentRow = this.searchSource.window.start;
+this.lastRow = this.searchSource.window.end;
+this.limitReached = false;
+if (this.response.meta.limit_reached == "true")
+this.limitReached = true;
+this.hasMoreResults = this.searchSource.has_more_results &&
+(this.limit && this.lastRow < this.limit) &&
+(this.resultThreshold && this.lastRow < this.resultThreshold);
+var vcrSpan = $(this.CXS_RESULTS_VCR);
+if (!vcrSpan)
+return;
+if (!this.resultsPerPage || (this.currentRow == 0 && !this.hasMoreResults)) {
+this._setVisible(vcrSpan, false);
+return;
+}
+this._setVisible(vcrSpan, true);
+vcrSpan.on('click', "[data-nav=true]", this._gotoActionEvent.bind(this));
+var firstRowSpan = $("cxs_results_first_row");
+var lastRowSpan = $("cxs_results_last_row");
+if (firstRowSpan)
+firstRowSpan.update(this.currentRow + 1);
+if (lastRowSpan)
+lastRowSpan.update(this.lastRow);
+this.backAllowed = (this.currentRow > 0);
+var images = vcrSpan.select("[data-nav=true]");
+if (images && images.length) {
+this._setAction(images[0], this.backAllowed);
+this._setAction(images[1], this.backAllowed);
+this._setAction(images[2], this.hasMoreResults);
+}
+},
+_showHideHeader: function() {
+var headerTable = $(this.CXS_SEARCH_RESULTS_HEADER);
+if (!headerTable)
+return;
+if (this.resultsHeaderText || (this.resultsPerPage && this.searchSource.meta.has_more_results))
+this._setVisible(headerTable, true);
+},
+_setVisible: function(element, flag) {
+if (!element)
+return;
+if ((flag && !element.visible()) || (!flag && element.visible()))
+element.toggle();
+},
+_setAction: function(img, allowed) {
+if (img.tagName.toLowerCase() == "img") {
+if (allowed) {
+img.addClassName("pointerhand");
+this._removeDis(img);
+} else {
+img.removeClassName("pointerhand");
+this._addDis(img);
+}
+} else {
+if (!allowed)
+img.addClassName("tab_button_disabled");
+else
+img.removeClassName("tab_button_disabled");
+}
+},
+_removeDis: function(img) {
+var src = img.src;
+if (src.indexOf('_dis.gifx') != -1)
+img.src = src.replace(/\_dis\.gifx/i, ".gifx");
+},
+_addDis: function(img) {
+var src = img.src;
+if (src.indexOf('_dis.gifx') == -1)
+img.src = src.replace(/\.gifx/i, "_dis.gifx");
+},
+_gotoActionEvent: function(ev, el) {
+ev.preventDefault();
+var action = el.name.substring(4);
+if (!action)
+return;
+Event.fire(this.targetElement, "cxs:force_display_results", true);
+this._gotoAction(action);
+},
+_gotoAction: function(action) {
+if (!action)
+return;
+if (!this.backAllowed && ((action == 'first') || (action == 'back')))
+return;
+if (!this.hasMoreResults && ((action == 'next') || (action == 'last')))
+return;
+if (action == 'first') {
+this.currentRow = 0;
+this.lastRow = this.currentRow + this.resultsPerPage;
+} else if (action == 'back') {
+this.currentRow = this.currentRow - this.resultsPerPage;
+if (this.currentRow < 0)
+this.currentRow = 0;
+this.lastRow = this.currentRow + this.resultsPerPage;
+} else if (action == 'next') {
+this.currentRow = this.currentRow + this.resultsPerPage;
+this.lastRow = this.currentRow + this.resultsPerPage;
+if (this.lastRow > this.limit)
+this.lastRow = this.limit;
+} else
+return;
+this._start(this.previousSearch);
+},
+_filterResultsBySource: function(elem) {
+if (elem.meta && (elem.meta.interleaved || elem.meta.pinned))
+return true;
+return false;
+},
+_getResultsMsgHtml: function() {
+if (!this.resultsMsg || this.response.results.length == 0)
+return "";
+var resultsMsgHtml = "";
+if (this.session.is_doctype)
+resultsMsgHtml =  "<div id='cxs_ou_search_warning' class='fieldmsg-container'>" +
+"<div class='fieldmsg notification notification-info'>" +
+this.resultsMsg +
+"</div>" +
+"</div>";
+else
+resultsMsgHtml =  "<div class='outputmsg_info'>" +
+"<img src='images/outputmsg_success.gifx' alt='Informational Message'>" +
+this.resultsMsg +
+"</div>";
+return resultsMsgHtml;
+},
+type: "KnowledgeSearchService"
+};
+/*! RESOURCE: /scripts/lib/jquery/jquery_clean.js */
+(function() {
+if (!window.jQuery)
+return;
+if (!window.$j_glide)
+window.$j = jQuery.noConflict();
+if (window.$j_glide && jQuery != window.$j_glide) {
+if (window.$j_glide)
+jQuery.noConflict(true);
+window.$j = window.$j_glide;
+}
+})();
+;
+;
