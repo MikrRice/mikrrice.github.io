@@ -61,10 +61,39 @@
             <div class="mdl-grid portfolio-max-width">
                 <div class="mdl-cell mdl-cell--12-col mdl-card mdl-shadow--4dp">
                     <div class="mdl-card__title">
-                        <h2 class="mdl-card__title-text">Not Created Yet</h2>
+                        <h2 class="mdl-card__title-text">Component Review: CPU</h2>
+                    </div>
+                    <div class="mdl-card__media">
+                        <img class="article-image" src="images/cpu.png" border="0" alt="">
+                    </div>
+                    <div class="mdl-grid portfolio-copy">
+                        <h3 class="mdl-cell mdl-cell--12-col mdl-typography--headline">Current Hardware</h3>
+                        <div class="mdl-cell mdl-cell--12-col mdl-card__supporting-text no-padding">
+                            <p>
+                                Right now you have an Intel Core i5-4670 CPU. Intel's Core i5 segment is designed and marketed to be a mainstream processor, not entry level like the i3's or high-end like the i7's. The 4670 is part of the 4th generation of Core i5's, initially released in 2013.
+							</p><p>
+								This model is a 4-core, 4-thread CPU running at 3.4 GHz with a turbo frequency of 3.8 GHz. The turbo frequency will kick in when the processor needs additional power and will stay at that speed for 8 seconds. This time can be extended or even made unlimited with certain motherboard settings. Regardless of the motherboard setting for this, the processor will throttle, or temporarily slow down, when it's temperature hits the top of it's comfort zone. Intel lists the TDP (Thermal Design Power) of this CPU as 84W. This is theoretically how much wattage the CPU will consume when running at it's base frequency, and the stock cooler is configured to be sufficient for cooling the heat from this power draw indefinately. When the CPU boosts the wattage increases, in your case by around 25%, which will cause additional heat and eventually cause throttling to the base frequency.
+							</p>
+						</div>
+                        <h3 class="mdl-cell mdl-cell--12-col mdl-typography--headline">Potential Upgrades</h3>
+                        <div class="mdl-cell mdl-cell--12-col mdl-card__supporting-text no-padding ">
+                            <p>
+                                Right now I don't think there are any mainstream Intel processors that you'd see a dramatic increase in gaming ability from, although Intel is releasing their new chips on May 20th and they look to be pretty impressive. The one I'd consider (pending results of reviews in a few days) is the i5-10400, a 6-core, 12-thread CPU with base frequency at 2.9 GHz and boost clock at 4 GHz. I expect these will retail for $200.
+							</p><p>
+								AMD also releases CPUs for the mainstream market and does have one out that would bump up your performance, the Ryzen 5 3600. This 6-core, 12-thread processor runs at 3.6 GHz base and 4.2 GHz turbo and sells for around $200.
+							</p>
+                        </div>
+                        <h3 class="mdl-cell mdl-cell--12-col mdl-typography--headline">CPU Dependancies</h3>
+                        <div class="mdl-cell mdl-cell--12-col mdl-card__supporting-text no-padding">
+                            <p>
+                                When you decide it's time to upgrade your CPU you'll need to upgrade a few other parts at the same time. For starters, your current motherboard's CPU socket is called LGA1150. The new Intel processors need LGA1200, and AMD processors use the AM4 socket. A new LGA1200 motherboard runs <a href="https://www.newegg.com/p/pl?N=100007627%20601352138&Order=PRICE">at least $150</a>.
+							</p><p>
+								A new motherboard won't be compatible with DDR3 memory, so you'd need to upgrade to DDR4 as well. I always recommend running memory in dual-channel mode, and 16GB is a good target. The best deal I see online for a respectable 2x8GB set of DDR4-3000 <a href="https://www.newegg.com/g-skill-16gb-288-pin-ddr4-sdram/p/N82E16820232756">is $64.99</a>.
+							</p>
+                        </div>
                     </div>
 					<div class="mdl-card__actions mdl-card--border">
-                        <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect mdl-button--accent" href="200517.html">< Back</a>
+                        <a style="float:right;" >More coming later ></a>
                     </div>
                 </div>
             </div>
@@ -78,7 +107,7 @@
             </footer>
         </main>
     </div>
-    <script src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <script src="mdl/material.js"></script>
 </body>
 
 </html>
